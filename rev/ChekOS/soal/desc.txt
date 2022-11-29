@@ -1,0 +1,8 @@
+Here lies a bleeding edge-obfuscated executables with a similar algorithm
+from the day a CPU was born! 
+Can you beat this flag-checker?
+
+Flag format: hology5{.*}
+MD5SUM(BINARY) = 648d9ceedb1e0e69b144859b6052ad03
+
+Author: aseng#2055

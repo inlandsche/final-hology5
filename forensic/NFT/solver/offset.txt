@@ -1,0 +1,7 @@
+Use Gimp -> Raw Image Data
+
+offset -> 24981975
+w = 3824
+h = 1000
+
+mirror image ~

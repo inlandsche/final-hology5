@@ -1,0 +1,21 @@
+Untrusted Shop
+==========================
+
+Last night, I bought a new laptop in Bagas1337 Shop and the employee's quite nice when offering me to install windows installation for free. But I find it annoying when I want to search or navigate through folders or files inside my OS, there's this weird pop-ups always exist in my display screen but it won't disappear even tough I obeyed its instruction. Can you take a look at it? I dumped the process memory of my OS so you can investigate it.
+
+Download the file:
+https://drive.google.com/file/d/1A0L0VOOV5IZzFLse78iVhKEIUWQfr9_g/view?usp=sharing
+
+Objectives:
+
+1. What's the executable's name that likely to be the ROOT CAUSE of the infection? (include the extension)
+example: bagas1337.exe
+
+2. There's also another malicious file which responsibles for the annoying popups. It also has a capability
+to reserve a certain memory that MIGHT execute a SHELLCODE in a memory buffer. What's the MD5 hash of the decrypted buffer?
+example: 21232f297a57a5a743894a0e4a801fc3
+
+Flag is wrapped with hology5{} with concatenated answers inside the curly brackets.
+example: `hology5{bagas31.exe_21232f297a57a5a743894a0e4a801fc3}`
+
+Author: aseng#2055

@@ -1,0 +1,9 @@
+"Earth Loves Flat"
+
+Here lies a flag-checker that is born
+by compilers which believes that "Flat Is Justice".
+
+Flag format: hology5{.*}
+MD5SUM(BINARY) = 491b36cc85bae31247ec57ea7bef7618
+
+Author: aseng#2055

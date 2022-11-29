@@ -1,0 +1,126 @@
+1. Use volatility to determine the OS Profile -> Win7SP1x64
+2. Enumerate all .exe or files that are malicious. Most of them are
+legitimate until we see a file in Downloads folder called "windowsupdater.e"
+3. Dump that file using:
+python vol.py -f /path/to/file/untrustedshop.vmem --profile=Win7SP1x64 dumpfiles -Q 0x000000007e4296d0 -D /path/to/dumped-directory/exe
+
+However, it turns out it's EMPTY , therefore it's not PAGED when the memory is captured.
+	
+4. Enumerate the memory by trying some volatility plugin. The victim says that his computer always has a pop-up(s)
+on his/her screen whenever he/she wants to navigate a file. This indicates that there could be a messagebox in his/her desktop.
+Use the screenshot plugin and we see some weird windows update warning that forces the victim to download a file from
+a potential malicious URL.
+
+h(tt)p://3vilwr4th.kr/windowsupdater.exe
+
+Yet the windowsupdater file actually exists in the Download folder but it cant be dumped. Yet what triggers it?
+Use malfind for the alternative hint!
+You may find there are some of detected malicious programs in the output.
+As you may carefully read the description from the victim, he/she often gets some "fishy" pop ups when he/she wants to NAVIGATE a file. This indicates whenever he/she tries to OPEN file explorer, that pop-ups will be in his/her screen again. 
+We can assume that there MAY be a PROCESS INJECTION in here. It could be from executable program or even a library (DLLs).
+Since the potential malicious program is windowsupdater.e(xe) that could probably not paged and we can't dump it, we
+may refer to the DLL Injection. Windowsupdater.exe MIGHT load a malicious library and inject it to explorer.exe (File Explorer). 
+
+
+Checkout the userassist plugin from volatility and you may find that windowsupdater.exe is really executed by the victim!
+Command:
+python vol.py -f /path/to/file/untrustedshop.vmem --profile=Win7SP1x64 userassist
+
+REG_BINARY    C:\Users\asenglogy\Downloads\windowsupdater.exe : 
+Count:          1
+Focus Count:    0
+Time Focused:   0:00:00.500000
+Last updated:   2022-08-26 10:02:09 UTC+0000
+Raw Data:
+0x00000000  00 00 00 00 01 00 00 00 00 00 00 00 00 00 00 00   ................
+0x00000010  00 00 80 bf 00 00 80 bf 00 00 80 bf 00 00 80 bf   ................
+0x00000020  00 00 80 bf 00 00 80 bf 00 00 80 bf 00 00 80 bf   ................
+0x00000030  00 00 80 bf 00 00 80 bf ff ff ff ff 30 2c af e7   ............0,..
+0x00000040  32 b9 d8 01 00 00 00 00                           2.......
+
+5. Let's try to list out what kind of DLLs are in the explorer.exe? First find its PID from pslist , which is 1204.
+Use dlllist plugin and specifies its PID, you may notice the malicious dll file from its unusual name ^-^.
+
+[ .... SNIP .... ]
+0x000007fef9610000            0x10000                0x2 2022-08-26 10:02:02 UTC+0000   C:\Windows\system32\sfc_os.DLL
+0x000007feeea70000           0x31e000                0x1 2022-08-26 10:02:02 UTC+0000   C:\Windows\system32\msi.dll
+0x000007fefbd30000            0x12000                0x1 2022-08-26 10:02:02 UTC+0000   C:\Windows\system32\DEVRTL.dll
+0x000007fef55b0000            0x1a000                0x1 2022-08-26 10:02:09 UTC+0000   C:\Windows\System32\JustANormalUp_DaterHeheh.dll
+0x000007fef8f60000             0x3000                0x2 2022-08-26 10:02:09 UTC+0000   C:\Windows\system32\api-ms-win-core-synch-l1-2-0.DLL
+
+
+6. Then use this command to dump that malicious DLL:
+python vol.py -f /path/to/untrustedshop.vmem --profile=Win7SP1x64 dlldump -p 1204 --regex="Just.*" -D /path/to/dumped-directory/dlls
+
+to dump the specified DLL
+
+7. Analyze the DLL using any kind of your favorite decompiler/disassembler/debugger, it has one export (Go), check that there's some WinAPI Calls that are related to execute some
+malicious payload like a shellcode (VirtualALloc, VirtualProtect) and the buffer were encrypted using WinAPI AES.
+Analyze statically and proceed to dump the shellcode payload using x64dbg (since the DLLs is 64 bit). 
+
+Interesting pseudocodes:
+
+si128 = _mm_load_si128((const __m128i *)&xmmword_7FEF55BC390);
+  *(__m128i *)Text = _mm_xor_si128(si128, (__m128i)xmmword_7FEF55BC310);
+  strcpy(v12, "Xnts!Vhoenvr!hr!onu!xdu!tqe`ude/!Qmd`rd!whrhu!iuuq;..2whmvs5ui/js.vhoenvrtqe`uds/dyd");
+  v1 = 0i64;
+  v15 = _mm_xor_si128(si128, (__m128i)xmmword_7FEF55BC330);
+  flOldProtect = 0;
+  v2 = 20i64;
+  v14 = _mm_xor_si128(si128, (__m128i)xmmword_7FEF55BC320);
+  v16 = _mm_xor_si128(si128, (__m128i)xmmword_7FEF55BC340);
+  do
+  {
+    v3 = v12[v1++ + 64];
+    v16.m128i_i8[v1 + 15] = v3 ^ 1;
+    --v2;
+  }
+  while ( v2 );
+  MessageBoxA(0i64, Text, "Windows Official Warning!", 0);
+
+
+The hardcoded string is decrypted by xorring each value with 1.
+The output is the same as what we see in the Desktop screenshot.
+
+Another interesting stuff:
+if ( CryptAcquireContextW(&phProv, 0i64, 0i64, 0x18u, 0xF0000000)
+    && CryptCreateHash(phProv, 0x800Cu, 0i64, 0, &phHash)
+    && CryptHashData(phHash, &pbData, 0x10u, 0)
+    && CryptDeriveKey(phProv, 0x6610u, phHash, 0, phKey)
+    && CryptDecrypt(phKey[0], 0i64, 0, 0, &Src, &pdwDataLen) )
+  {
+    CryptReleaseContext(phProv, 0);
+    CryptDestroyHash(phHash);
+    CryptDestroyKey(phKey[0]);
+  }
+  v4 = VirtualAlloc(0i64, (unsigned int)Size, 0x3000u, 4u);
+  memmove(v4, &Src, (unsigned int)Size);
+  if ( VirtualProtect(v4, (unsigned int)Size, 0x20u, &flOldProtect) )
+  {
+    Thread = CreateThread(0i64, 0i64, (LPTHREAD_START_ROUTINE)v4, 0i64, 0, 0i64);
+    WaitForSingleObject(Thread, 0);
+  }
+
+It decrypts a "payload" that will be allocated to the new memory region that has already RWX permission since
+it involves VirtualProtect. We can confirm that this is the "shellcode"-like reference.
+
+Shellcode dumping after CryptDecrypt calls / after VirtualAlloc
+
+000007FEF55C5000  34 6E 64 5F 74 75 72 6E 35 5F 30 75 74 5F 74 68  4nd_turn5_0ut_th  
+000007FEF55C5010  21 73 5F 69 73 5F 6E 30 74 5F 61 5F 73 68 33 6C  !s_is_n0t_a_sh3l  
+000007FEF55C5020  6C 63 30 64 65 5F 68 33 68 33 5F 62 75 74 5F 6A  lc0de_h3h3_but_j  
+000007FEF55C5030  55 35 74 5F 61 5F 68 6F 6C 6F 5F 66 6C 34 67 01  U5t_a_holo_fl4g.  
+
+It's a buffer containing hology flag instead of a shellcode! ~~
+
+
+So the infected process = explorer.exe, with its PID 1204.
+The executable/program that probably cause the most impact is from windowsupdater.exe.
+The MD5 of decrypted "shellcode" (which is the flag) is d230dfa5472c4fca4bab4458e1cb24fc
+
+
+So the flag is:
+hology5{windowsupdater.exe_d230dfa5472c4fca4bab4458e1cb24fc}
+
+Regards, 
+aseng

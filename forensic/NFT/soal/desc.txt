@@ -1,0 +1,15 @@
+NFT
+==================================
+
+Potsu just created a cute cat meme NFT image with a really cool hology flag but the app's that the NFT was created is crashed.
+Potsu's friend, sl0ck decided to create a minidump of it , and hopefully you as the NFT community supporter can recover the image to Potsu and sl0ck will pay you 73.31% !
+
+Download the MiniDump from here:
+https://drive.google.com/file/d/1iL0faT56Y65yfZKw-iEiZZsQQ5ES2XPZ/view?usp=sharing
+
+Flag format: hology5{.*}
+
+Notes: Potsu realized that the closing curly bracket (}) message is missing in the image :( so you need to
+add it on your own!
+
+Author: aseng#2055
